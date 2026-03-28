@@ -1,0 +1,46 @@
+# Root-level pyproject.toml — shared tooling configuration only.
+# This is NOT a package. Each package has its own pyproject.toml.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = [
+    "packages/icv-core/src",
+    "packages/icv-search/src",
+    "packages/icv-sitemaps/src",
+    "packages/icv-tree/src",
+    "packages/django-boundary/src",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "SIM", # flake8-simplify
+    "DJ",  # flake8-django
+]
+ignore = [
+    "E501",   # line length handled by the formatter
+    "N806",   # User = get_user_model() is standard Django convention
+    "SIM105", # contextlib.suppress less readable than try/except/pass for DoesNotExist
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/audit/models.py" = ["DJ001"]  # GenericForeignKey object_id fields require null=True
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "icv_core",
+    "icv_search",
+    "icv_sitemaps",
+    "icv_tree",
+    "boundary",
+]
+
+[tool.ruff.format]
+quote-style = "double"
