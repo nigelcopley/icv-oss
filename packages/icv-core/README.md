@@ -1,6 +1,6 @@
 # django-icv-core
 
-[![CI](https://github.com/nigelcopley/icv-django/actions/workflows/ci.yml/badge.svg)](https://github.com/nigelcopley/icv-django/actions/workflows/ci.yml)
+[![CI](https://github.com/nigelcopley/icv-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/nigelcopley/icv-oss/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/django-icv-core.svg)](https://pypi.org/project/django-icv-core/)
 [![Python versions](https://img.shields.io/pypi/pyversions/django-icv-core.svg)](https://pypi.org/project/django-icv-core/)
 [![Django versions](https://img.shields.io/pypi/djversions/django-icv-core.svg)](https://pypi.org/project/django-icv-core/)
@@ -22,10 +22,6 @@ INSTALLED_APPS = [
     "icv_core",
 ]
 ```
-
-## Documentation
-
-See [APP-001: Core](../../docs/specs/APP-001-core.md) for the full specification.
 
 ## Quick Start
 
@@ -60,4 +56,4 @@ All settings use the `ICV_CORE_` prefix. Every setting has a sensible default.
 | `ICV_CORE_AUDIT_ENABLED` | `False` | Enable the audit subsystem |
 | `ICV_CORE_AUDIT_RETENTION_DAYS` | `365` | Days before audit entries are eligible for archival |
 
-See [APP-001](../../docs/specs/APP-001-core.md) Section 2 for the full settings reference.
+See the source code in `icv_core/conf.py` for the full settings reference.
