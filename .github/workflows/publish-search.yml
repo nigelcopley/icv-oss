@@ -73,12 +73,10 @@ jobs:
           pip install -e "packages/icv-search"
 
       - name: Run tests
-        run: |
-          pytest "packages/icv-search/tests/" \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/icv-search/src packages/icv-search/tests"
+        run: pytest "packages/icv-search/tests/" -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-search/src:packages/icv-search/tests
 
   # ── 3. Build wheel and sdist ───────────────────────────────────────────────
   build:

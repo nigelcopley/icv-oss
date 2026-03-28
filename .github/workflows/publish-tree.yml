@@ -73,13 +73,13 @@ jobs:
 
       - name: Run tests
         run: |
-          DB_ENGINE=django.db.backends.sqlite3 \
           pytest "packages/icv-tree/tests/" \
             -v --tb=short --color=yes \
-            -m "not slow" \
-            -o "pythonpath=packages/icv-tree/src packages/icv-tree/tests"
+            -m "not slow"
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-tree/src:packages/icv-tree/tests
+          DB_ENGINE: django.db.backends.sqlite3
 
   # ── 3. Build wheel and sdist ───────────────────────────────────────────────
   build:

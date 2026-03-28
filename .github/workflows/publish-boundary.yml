@@ -86,12 +86,10 @@ jobs:
           pip install -e "packages/django-boundary"
 
       - name: Run tests
-        run: |
-          pytest "packages/django-boundary/tests/" \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/django-boundary/src packages/django-boundary/tests"
+        run: pytest "packages/django-boundary/tests/" -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/django-boundary/src:packages/django-boundary/tests
           POSTGRES_USER: icv_test
           POSTGRES_PASSWORD: icv_test_password
           POSTGRES_DB: boundary_test

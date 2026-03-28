@@ -71,12 +71,10 @@ jobs:
           pip install -e "packages/icv-core"
 
       - name: Run tests
-        run: |
-          pytest "packages/icv-core/tests/" \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/icv-core/src packages/icv-core/tests"
+        run: pytest "packages/icv-core/tests/" -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-core/src:packages/icv-core/tests
 
   # ── 3. Build wheel and sdist ───────────────────────────────────────────────
   build:

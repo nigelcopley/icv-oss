@@ -72,12 +72,10 @@ jobs:
           pip install -e "packages/icv-sitemaps"
 
       - name: Run tests
-        run: |
-          pytest "packages/icv-sitemaps/tests/" \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/icv-sitemaps/src packages/icv-sitemaps/tests"
+        run: pytest "packages/icv-sitemaps/tests/" -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-sitemaps/src:packages/icv-sitemaps/tests
 
   # ── 3. Build wheel and sdist ───────────────────────────────────────────────
   build:
