@@ -315,6 +315,7 @@ class TestObjectTaggedSignal:
     def test_object_tagged_signal_includes_content_type(self, db, flat_vocabulary, article):
         """object_tagged payload includes the ContentType of the tagged object."""
         from django.contrib.contenttypes.models import ContentType
+
         from icv_taxonomy.services import tag_object
         from icv_taxonomy.signals import object_tagged
 

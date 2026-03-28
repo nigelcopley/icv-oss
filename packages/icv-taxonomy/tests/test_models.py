@@ -438,6 +438,7 @@ class TestTermAssociationUniqueness:
     def test_duplicate_association_raises_integrity_error(self, db, article):
         """Tagging the same object with the same term twice raises IntegrityError."""
         from django.contrib.contenttypes.models import ContentType
+
         from icv_taxonomy.models import Term, TermAssociation, Vocabulary
 
         vocab = Vocabulary.objects.create(name="Assoc Unique", slug="assoc-unique")

@@ -386,6 +386,7 @@ class TestDeactivateTerm:
     def test_preserves_associations_after_deactivation(self, db, article):
         """Deactivating a term does not remove its associations (BR-TAX-013)."""
         from django.apps import apps
+
         from icv_taxonomy.services import (
             create_term,
             create_vocabulary,
@@ -430,6 +431,7 @@ class TestTagObject:
     def test_creates_association(self, db, article):
         """tag_object() creates a TermAssociation row."""
         from django.apps import apps
+
         from icv_taxonomy.services import create_term, create_vocabulary, tag_object
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -511,6 +513,7 @@ class TestUntagObject:
     def test_removes_association(self, db, article):
         """untag_object() deletes the TermAssociation row."""
         from django.apps import apps
+
         from icv_taxonomy.services import create_term, create_vocabulary, tag_object, untag_object
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -612,13 +615,14 @@ class TestGetObjectsForTerm:
 
     def test_returns_typed_queryset_when_model_class_given(self, db, article, product):
         """Returns a typed QuerySet when model_class is specified."""
+        from taxonomy_testapp.models import Article
+
         from icv_taxonomy.services import (
             create_term,
             create_vocabulary,
             get_objects_for_term,
             tag_object,
         )
-        from taxonomy_testapp.models import Article
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
         term = create_term(vocabulary=vocab, name="Tag")
@@ -682,8 +686,9 @@ class TestBulkTagObjects:
     def test_creates_associations_for_all_objects(self, db):
         """Associations are created for every object in the list."""
         from django.apps import apps
-        from icv_taxonomy.services import bulk_tag_objects, create_term, create_vocabulary
         from taxonomy_testapp.models import Article
+
+        from icv_taxonomy.services import bulk_tag_objects, create_term, create_vocabulary
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
         term = create_term(vocabulary=vocab, name="Python")
@@ -697,6 +702,7 @@ class TestBulkTagObjects:
     def test_skips_duplicates_silently(self, db, article):
         """Duplicate tags are silently ignored (ignore_conflicts)."""
         from django.apps import apps
+
         from icv_taxonomy.services import bulk_tag_objects, create_term, create_vocabulary
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -733,13 +739,14 @@ class TestCleanupOrphanedAssociations:
     def test_removes_orphaned_associations(self, db):
         """Associations for deleted objects are removed."""
         from django.apps import apps
+        from taxonomy_testapp.models import Article
+
         from icv_taxonomy.services import (
             cleanup_orphaned_associations,
             create_term,
             create_vocabulary,
             tag_object,
         )
-        from taxonomy_testapp.models import Article
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
         term = create_term(vocabulary=vocab, name="Tag")
@@ -759,13 +766,14 @@ class TestCleanupOrphanedAssociations:
     def test_dry_run_does_not_delete(self, db):
         """dry_run=True reports orphans without deleting them."""
         from django.apps import apps
+        from taxonomy_testapp.models import Article
+
         from icv_taxonomy.services import (
             cleanup_orphaned_associations,
             create_term,
             create_vocabulary,
             tag_object,
         )
-        from taxonomy_testapp.models import Article
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
         term = create_term(vocabulary=vocab, name="Tag")
@@ -793,6 +801,7 @@ class TestAddRelationship:
     def test_creates_relationship(self, db):
         """A TermRelationship row is created."""
         from django.apps import apps
+
         from icv_taxonomy.services import add_relationship, create_term, create_vocabulary
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -807,6 +816,7 @@ class TestAddRelationship:
     def test_creates_reciprocal_for_synonym(self, db):
         """Synonym relationship creates the reciprocal record (BR-TAX-020)."""
         from django.apps import apps
+
         from icv_taxonomy.services import add_relationship, create_term, create_vocabulary
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -820,6 +830,7 @@ class TestAddRelationship:
     def test_creates_reciprocal_for_related(self, db):
         """Related relationship creates the reciprocal record (BR-TAX-020)."""
         from django.apps import apps
+
         from icv_taxonomy.services import add_relationship, create_term, create_vocabulary
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -833,6 +844,7 @@ class TestAddRelationship:
     def test_does_not_create_reciprocal_for_see_also(self, db):
         """Directional relationship does NOT create a reciprocal."""
         from django.apps import apps
+
         from icv_taxonomy.services import add_relationship, create_term, create_vocabulary
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -859,6 +871,7 @@ class TestAddRelationship:
     def test_idempotent_for_existing_relationship(self, db):
         """Calling add_relationship twice does not create duplicates."""
         from django.apps import apps
+
         from icv_taxonomy.services import add_relationship, create_term, create_vocabulary
 
         vocab = create_vocabulary(name="Tags", vocabulary_type="flat")
@@ -880,6 +893,7 @@ class TestRemoveRelationship:
     def test_removes_relationship(self, db):
         """TermRelationship row is deleted."""
         from django.apps import apps
+
         from icv_taxonomy.services import (
             add_relationship,
             create_term,
@@ -901,6 +915,7 @@ class TestRemoveRelationship:
     def test_removes_reciprocal_for_synonym(self, db):
         """Removing synonym also removes the reciprocal record."""
         from django.apps import apps
+
         from icv_taxonomy.services import (
             add_relationship,
             create_term,
