@@ -19,6 +19,14 @@ INSTALLED_APPS = [
     "taxonomy_testapp",
 ]
 
+# Add icv_core if installed (avoids AuditEntry app_label error in CI)
+try:
+    import icv_core  # noqa: F401
+
+    INSTALLED_APPS.insert(2, "icv_core")
+except ImportError:
+    pass
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -35,6 +43,14 @@ MIGRATION_MODULES = {
     "admin": None,
     "sessions": None,
 }
+
+# Suppress icv_core migrations if installed
+try:
+    import icv_core  # noqa: F401
+
+    MIGRATION_MODULES["icv_core"] = None
+except ImportError:
+    pass
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
