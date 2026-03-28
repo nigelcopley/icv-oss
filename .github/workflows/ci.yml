@@ -70,7 +70,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install "Django~=5.1.0"
           pip install pytest pytest-django pytest-cov pytest-mock factory-boy djangorestframework
-          pip install psycopg2-binary psycopg[binary]
+          pip install psycopg2-binary "psycopg[binary]"
 
       - name: Install all packages
         run: |
@@ -83,51 +83,41 @@ jobs:
 
       - name: Test icv-core
         if: always()
-        run: |
-          pytest packages/icv-core/tests/ \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/icv-core/src packages/icv-core/tests"
+        run: pytest packages/icv-core/tests/ -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-core/src:packages/icv-core/tests
           DATABASE_URL: postgresql://icv_test:icv_test_password@localhost:5432/icv_test_db
 
       - name: Test icv-tree
         if: always()
-        run: |
-          pytest packages/icv-tree/tests/ \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/icv-tree/src packages/icv-tree/tests"
+        run: pytest packages/icv-tree/tests/ -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-tree/src:packages/icv-tree/tests
 
       - name: Test icv-search
         if: always()
-        run: |
-          pytest packages/icv-search/tests/ \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/icv-search/src packages/icv-search/tests"
+        run: pytest packages/icv-search/tests/ -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-search/src:packages/icv-search/tests
           DATABASE_URL: postgresql://icv_test:icv_test_password@localhost:5432/icv_test_db
 
       - name: Test icv-sitemaps
         if: always()
-        run: |
-          pytest packages/icv-sitemaps/tests/ \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/icv-sitemaps/src packages/icv-sitemaps/tests"
+        run: pytest packages/icv-sitemaps/tests/ -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-sitemaps/src:packages/icv-sitemaps/tests
           DATABASE_URL: postgresql://icv_test:icv_test_password@localhost:5432/icv_test_db
 
       - name: Test django-boundary
         if: always()
-        run: |
-          pytest packages/django-boundary/tests/ \
-            -v --tb=short --color=yes \
-            -o "pythonpath=packages/django-boundary/src packages/django-boundary/tests"
+        run: pytest packages/django-boundary/tests/ -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/django-boundary/src:packages/django-boundary/tests
           POSTGRES_USER: icv_test
           POSTGRES_PASSWORD: icv_test_password
           POSTGRES_DB: icv_test_db
