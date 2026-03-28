@@ -9,6 +9,7 @@ src = [
     "packages/icv-search/src",
     "packages/icv-sitemaps/src",
     "packages/icv-tree/src",
+    "packages/icv-taxonomy/src",
     "packages/django-boundary/src",
 ]
 
@@ -39,6 +40,7 @@ known-first-party = [
     "icv_search",
     "icv_sitemaps",
     "icv_tree",
+    "icv_taxonomy",
     "boundary",
 ]
 

@@ -10,6 +10,7 @@ Reusable Django packages providing foundational capabilities for modern Django a
 | [django-icv-tree](packages/icv-tree/) | [![PyPI](https://img.shields.io/pypi/v/django-icv-tree)](https://pypi.org/project/django-icv-tree/) | Materialised path tree structures — configurable format, async-safe, no tenancy coupling |
 | [django-icv-search](packages/icv-search/) | [![PyPI](https://img.shields.io/pypi/v/django-icv-search)](https://pypi.org/project/django-icv-search/) | Pluggable search engine integration — index management, document indexing, swappable backends |
 | [django-icv-sitemaps](packages/icv-sitemaps/) | [![PyPI](https://img.shields.io/pypi/v/django-icv-sitemaps)](https://pypi.org/project/django-icv-sitemaps/) | Scalable sitemap generation, robots.txt, llms.txt, ads.txt, security.txt |
+| [django-icv-taxonomy](packages/icv-taxonomy/) | [![PyPI](https://img.shields.io/pypi/v/django-icv-taxonomy)](https://pypi.org/project/django-icv-taxonomy/) | Cross-domain taxonomy, vocabularies, and tagging — hierarchical/flat/faceted terms |
 | [django-boundary](packages/django-boundary/) | [![PyPI](https://img.shields.io/pypi/v/django-boundary)](https://pypi.org/project/django-boundary/) | Row-level multi-tenancy for Django with PostgreSQL RLS |
 
 ## Requirements
@@ -26,6 +27,7 @@ pip install django-icv-core
 pip install django-icv-tree
 pip install django-icv-search
 pip install django-icv-sitemaps
+pip install django-icv-taxonomy
 pip install django-boundary
 ```
 
@@ -37,7 +39,8 @@ Every package depends only on `django-icv-core`. There are no inter-package depe
 django-icv-core    (foundation — no package dependencies)
     ├── django-icv-tree
     ├── django-icv-search
-    └── django-icv-sitemaps
+    ├── django-icv-sitemaps
+    └── django-icv-taxonomy (also depends on icv-tree)
 
 django-boundary    (standalone — no ICV dependencies)
 ```

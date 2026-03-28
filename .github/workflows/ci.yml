@@ -118,6 +118,14 @@ jobs:
           DJANGO_SETTINGS_MODULE: settings
           PYTHONPATH: packages/icv-sitemaps/src:packages/icv-sitemaps/tests
 
+      # icv-taxonomy: SQLite, depends on icv-tree
+      - name: Test icv-taxonomy
+        if: always()
+        run: pytest packages/icv-taxonomy/tests/ -v --tb=short --color=yes
+        env:
+          DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-taxonomy/src:packages/icv-taxonomy/tests:packages/icv-tree/src
+
       # django-boundary: PostgreSQL (uses POSTGRES_* env vars)
       - name: Test django-boundary
         if: always()

@@ -1,0 +1,159 @@
+name: Publish icv-taxonomy to PyPI
+
+# Triggered by tags of the form: icv-taxonomy/v0.1.0
+#
+# OIDC trusted publishing — no API token is required in repository secrets.
+# Configure trusted publishing in your PyPI project settings:
+#   Publisher: GitHub Actions
+#   Owner: nigelcopley
+#   Repository: icv-oss
+#   Workflow: publish-taxonomy.yml
+#   Environment: pypi
+
+on:
+  push:
+    tags:
+      - "icv-taxonomy/v*"
+
+env:
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_PYTHON_VERSION_WARNING: "1"
+  PACKAGE_NAME: icv-taxonomy
+  PACKAGE_DIR: packages/icv-taxonomy
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  # ── 1. Parse version from the tag ──────────────────────────────────────────
+  resolve:
+    name: Resolve version from tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      release_title: ${{ steps.parse.outputs.release_title }}
+    steps:
+      - name: Parse tag
+        id: parse
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#*/v}"
+          if [[ -z "$VERSION" ]]; then
+            echo "ERROR: Could not parse version from tag '$TAG'"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "release_title=icv-taxonomy v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+  # ── 2. Run the test suite before publishing ────────────────────────────────
+  test:
+    name: Test icv-taxonomy
+    runs-on: ubuntu-latest
+    needs: resolve
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "Django~=5.1.0"
+          pip install pytest pytest-django pytest-cov pytest-mock factory-boy
+          pip install -e "packages/icv-tree"
+          pip install -e "packages/icv-taxonomy"
+
+      - name: Run tests
+        run: pytest "packages/icv-taxonomy/tests/" -v --tb=short --color=yes
+        env:
+          DJANGO_SETTINGS_MODULE: settings
+          PYTHONPATH: packages/icv-taxonomy/src:packages/icv-taxonomy/tests:packages/icv-tree/src
+
+  # ── 3. Build wheel and sdist ───────────────────────────────────────────────
+  build:
+    name: Build icv-taxonomy
+    runs-on: ubuntu-latest
+    needs: [resolve, test]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build wheel and sdist
+        working-directory: packages/icv-taxonomy
+        run: python -m build
+
+      - name: Verify distributions with twine
+        working-directory: packages/icv-taxonomy
+        run: twine check dist/*
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-icv-taxonomy-${{ needs.resolve.outputs.version }}
+          path: packages/icv-taxonomy/dist/
+          if-no-files-found: error
+
+  # ── 4. Publish to PyPI via OIDC trusted publishing ────────────────────────
+  publish:
+    name: Publish icv-taxonomy to PyPI
+    runs-on: ubuntu-latest
+    needs: [resolve, build]
+    environment: pypi
+
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: dist-icv-taxonomy-${{ needs.resolve.outputs.version }}
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          verbose: true
+
+  # ── 5. Create GitHub Release ───────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [resolve, publish]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: dist-icv-taxonomy-${{ needs.resolve.outputs.version }}
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ needs.resolve.outputs.release_title }}
+          files: dist/*
+          generate_release_notes: true
+          prerelease: ${{ startsWith(needs.resolve.outputs.version, '0.') }}
+          fail_on_unmatched_files: true
