@@ -478,3 +478,103 @@ class TestVocabularyDeletionCascades:
         assert TermAssociation.objects.filter(term=term).exists()
         vocab.delete()
         assert not TermAssociation.objects.filter(term_id=term.pk).exists()
+
+
+@pytest.mark.django_db
+class TestCrossVocabularyPathCollision:
+    """Regression tests for GitHub issue #2: path collision across vocabularies.
+
+    Verifies that terms in different vocabularies get independent path
+    numbering and that rebuild() does not produce cross-vocabulary collisions.
+    """
+
+    def test_terms_in_different_flat_vocabs_get_same_paths(self, db):
+        """Root terms in different vocabularies should both start at path '0001'."""
+        from icv_taxonomy.models import Term, Vocabulary
+
+        v1 = Vocabulary.objects.create(name="Path A", slug="path-a", vocabulary_type="flat")
+        v2 = Vocabulary.objects.create(name="Path B", slug="path-b", vocabulary_type="flat")
+
+        t1 = Term.objects.create(vocabulary=v1, name="A-1", slug="a-1")
+        t2 = Term.objects.create(vocabulary=v2, name="B-1", slug="b-1")
+        t1.refresh_from_db()
+        t2.refresh_from_db()
+
+        assert t1.path == "0001"
+        assert t2.path == "0001"
+
+    def test_many_terms_across_flat_vocabs_no_collision(self, db):
+        """Creating many terms across two flat vocabularies should not raise IntegrityError."""
+        from icv_taxonomy.models import Term, Vocabulary
+
+        v1 = Vocabulary.objects.create(name="Many A", slug="many-a", vocabulary_type="flat")
+        v2 = Vocabulary.objects.create(name="Many B", slug="many-b", vocabulary_type="flat")
+
+        for i in range(20):
+            Term.objects.create(vocabulary=v1, name=f"A-{i}", slug=f"a-{i}")
+            Term.objects.create(vocabulary=v2, name=f"B-{i}", slug=f"b-{i}")
+
+        assert Term.all_objects.filter(vocabulary=v1).count() == 20
+        assert Term.all_objects.filter(vocabulary=v2).count() == 20
+
+    def test_rebuild_with_multiple_flat_vocabs_no_collision(self, db):
+        """rebuild() should not raise IntegrityError across multiple flat vocabularies."""
+        from icv_taxonomy.models import Term, Vocabulary
+
+        v1 = Vocabulary.objects.create(name="Rebuild A", slug="rebuild-a", vocabulary_type="flat")
+        v2 = Vocabulary.objects.create(name="Rebuild B", slug="rebuild-b", vocabulary_type="flat")
+
+        for i in range(10):
+            Term.objects.create(vocabulary=v1, name=f"RA-{i}", slug=f"ra-{i}")
+            Term.objects.create(vocabulary=v2, name=f"RB-{i}", slug=f"rb-{i}")
+
+        # Corrupt paths, then rebuild — should succeed.
+        for term in Term.all_objects.all():
+            Term.all_objects.filter(pk=term.pk).update(
+                path=f"CORRUPT_{term.pk}", depth=99, order=99,
+            )
+
+        result = Term.all_objects.rebuild()
+        assert result["nodes_updated"] == 20
+
+        # Each vocab should have paths 0001..0010 independently.
+        v1_paths = sorted(Term.all_objects.filter(vocabulary=v1).values_list("path", flat=True))
+        v2_paths = sorted(Term.all_objects.filter(vocabulary=v2).values_list("path", flat=True))
+        expected = [f"{str(i + 1).zfill(4)}" for i in range(10)]
+        assert v1_paths == expected
+        assert v2_paths == expected
+
+    def test_rebuild_with_hierarchical_vocab_alongside_flat(self, db):
+        """rebuild() handles mixed vocabulary types correctly."""
+        from icv_taxonomy.models import Term, Vocabulary
+
+        flat = Vocabulary.objects.create(name="Flat Mixed", slug="flat-mixed", vocabulary_type="flat")
+        hier = Vocabulary.objects.create(name="Hier Mixed", slug="hier-mixed", vocabulary_type="hierarchical")
+
+        # Flat terms.
+        for i in range(5):
+            Term.objects.create(vocabulary=flat, name=f"F-{i}", slug=f"f-{i}")
+
+        # Hierarchical terms.
+        root = Term(vocabulary=hier, name="Root", slug="root-mixed")
+        root.save()
+        root.refresh_from_db()
+        child = Term(vocabulary=hier, name="Child", slug="child-mixed", parent=root)
+        child.save()
+        child.refresh_from_db()
+
+        # Corrupt and rebuild.
+        for term in Term.all_objects.all():
+            Term.all_objects.filter(pk=term.pk).update(
+                path=f"CORRUPT_{term.pk}", depth=99, order=99,
+            )
+
+        Term.all_objects.rebuild()
+
+        root.refresh_from_db()
+        child.refresh_from_db()
+        assert root.path == "0001"
+        assert child.path == "0001/0001"
+
+        flat_paths = sorted(Term.all_objects.filter(vocabulary=flat).values_list("path", flat=True))
+        assert flat_paths == [f"{str(i + 1).zfill(4)}" for i in range(5)]

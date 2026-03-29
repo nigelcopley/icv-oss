@@ -256,9 +256,15 @@ class AbstractTerm(TreeNode, _BASE):  # type: ignore[valid-type,misc]
     A term belongs to exactly one vocabulary. Slug uniqueness is enforced within
     a vocabulary, not globally. Parent must be in the same vocabulary.
 
+    Path uniqueness is scoped per vocabulary via ``tree_scope_field`` so that
+    multiple vocabularies can each have independent path numbering without
+    collisions.
+
     Subclass this when you need to extend terms with project-specific fields.
     The concrete default is ``Term``.
     """
+
+    tree_scope_field = "vocabulary"
 
     vocabulary = models.ForeignKey(
         getattr(django_settings, "ICV_TAXONOMY_VOCABULARY_MODEL", "icv_taxonomy.Vocabulary"),
@@ -304,7 +310,7 @@ class AbstractTerm(TreeNode, _BASE):  # type: ignore[valid-type,misc]
     class Meta(TreeNode.Meta):
         abstract = True
         ordering = ["path"]
-        unique_together = [("vocabulary", "slug")]
+        unique_together = [("vocabulary", "slug"), ("vocabulary", "path")]
 
     def __str__(self) -> str:
         return self.name
