@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-03-30
+
+### Fixed
+
+- Add missing `swappable` Meta attribute to concrete `Vocabulary` and `Term` models
+- Add missing `swappable` option to `0001_initial` migration for both models
+
 ## [0.2.0] — 2026-03-30
 
 ### Changed

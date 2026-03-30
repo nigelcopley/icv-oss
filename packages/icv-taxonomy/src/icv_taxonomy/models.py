@@ -239,6 +239,7 @@ class Vocabulary(AbstractVocabulary):
         db_table = "icv_taxonomy_vocabulary"
         verbose_name = _("vocabulary")
         verbose_name_plural = _("vocabularies")
+        swappable = "ICV_TAXONOMY_VOCABULARY_MODEL"
 
 
 # ------------------------------------------------------------------
@@ -464,6 +465,7 @@ class Term(AbstractTerm):
         db_table = "icv_taxonomy_term"
         verbose_name = _("term")
         verbose_name_plural = _("terms")
+        swappable = "ICV_TAXONOMY_TERM_MODEL"
 
 
 # ------------------------------------------------------------------

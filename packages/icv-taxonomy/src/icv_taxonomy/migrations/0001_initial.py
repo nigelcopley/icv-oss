@@ -126,6 +126,7 @@ class Migration(migrations.Migration):
                 "db_table": "icv_taxonomy_vocabulary",
                 "ordering": ["name"],
                 "abstract": False,
+                "swappable": "ICV_TAXONOMY_VOCABULARY_MODEL",
             },
         ),
         migrations.CreateModel(
@@ -253,6 +254,7 @@ class Migration(migrations.Migration):
                 "ordering": ["path"],
                 "abstract": False,
                 "unique_together": {("vocabulary", "slug")},
+                "swappable": "ICV_TAXONOMY_TERM_MODEL",
             },
         ),
         migrations.CreateModel(
