@@ -531,7 +531,9 @@ class TestCrossVocabularyPathCollision:
         # Corrupt paths, then rebuild — should succeed.
         for term in Term.all_objects.all():
             Term.all_objects.filter(pk=term.pk).update(
-                path=f"CORRUPT_{term.pk}", depth=99, order=99,
+                path=f"CORRUPT_{term.pk}",
+                depth=99,
+                order=99,
             )
 
         result = Term.all_objects.rebuild()
@@ -566,7 +568,9 @@ class TestCrossVocabularyPathCollision:
         # Corrupt and rebuild.
         for term in Term.all_objects.all():
             Term.all_objects.filter(pk=term.pk).update(
-                path=f"CORRUPT_{term.pk}", depth=99, order=99,
+                path=f"CORRUPT_{term.pk}",
+                depth=99,
+                order=99,
             )
 
         Term.all_objects.rebuild()

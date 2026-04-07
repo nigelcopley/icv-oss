@@ -17,8 +17,7 @@ class Migration(migrations.Migration):
                 db_index=True,
                 editable=False,
                 help_text=(
-                    "Materialised path string (e.g. '0001/0002/0003'). "
-                    "Managed by icv-tree — do not edit directly."
+                    "Materialised path string (e.g. '0001/0002/0003'). Managed by icv-tree — do not edit directly."
                 ),
                 max_length=255,
                 verbose_name="path",
