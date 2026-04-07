@@ -179,6 +179,18 @@ class AbstractVocabulary(_BASE):  # type: ignore[valid-type,misc]
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def terms(self) -> models.QuerySet:
+        """Return a queryset of terms belonging to this vocabulary.
+
+        Resolves the swappable Term model at call time so the accessor
+        works regardless of which concrete ``AbstractTerm`` subclass is
+        active.
+        """
+        from .conf import get_term_model
+
+        return get_term_model().objects.filter(vocabulary=self)
+
     def clean(self) -> None:
         """Validate vocabulary business rules.
 
@@ -270,7 +282,7 @@ class AbstractTerm(TreeNode, _BASE):  # type: ignore[valid-type,misc]
     vocabulary = models.ForeignKey(
         getattr(django_settings, "ICV_TAXONOMY_VOCABULARY_MODEL", "icv_taxonomy.Vocabulary"),
         on_delete=models.CASCADE,
-        related_name="terms",
+        related_name="%(class)s_set",
         verbose_name=_("vocabulary"),
         help_text=_("The vocabulary this term belongs to."),
     )
@@ -486,14 +498,14 @@ class AbstractTermRelationship(models.Model):
     term_from = models.ForeignKey(
         getattr(django_settings, "ICV_TAXONOMY_TERM_MODEL", "icv_taxonomy.Term"),
         on_delete=models.CASCADE,
-        related_name="relationships_from",
+        related_name="%(class)s_from_set",
         verbose_name=_("term from"),
         help_text=_("Origin term of the relationship."),
     )
     term_to = models.ForeignKey(
         getattr(django_settings, "ICV_TAXONOMY_TERM_MODEL", "icv_taxonomy.Term"),
         on_delete=models.CASCADE,
-        related_name="relationships_to",
+        related_name="%(class)s_to_set",
         verbose_name=_("term to"),
         help_text=_("Target term of the relationship."),
     )
@@ -561,7 +573,7 @@ class AbstractTermAssociation(models.Model):
     term = models.ForeignKey(
         getattr(django_settings, "ICV_TAXONOMY_TERM_MODEL", "icv_taxonomy.Term"),
         on_delete=models.CASCADE,
-        related_name="associations",
+        related_name="%(class)s_set",
         verbose_name=_("term"),
         help_text=_("The taxonomy term applied to the object."),
     )

@@ -51,6 +51,7 @@ def _build_term_relationship_inline():  # type: ignore[no-untyped-def]
         model = TermRelationship
         fk_name = "term_from"
         fields = ("term_to", "relationship_type")
+        autocomplete_fields = ("term_to",)
         extra = 1
 
         def get_queryset(self, request):  # type: ignore[no-untyped-def]
@@ -112,7 +113,7 @@ class VocabularyAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):  # type: ignore[no-untyped-def]
         """Annotate queryset with active term count."""
-        return super().get_queryset(request).annotate(_term_count=Count("terms", filter=_active_terms_filter()))
+        return super().get_queryset(request).annotate(_term_count=Count("term_set", filter=_active_terms_filter()))
 
     @admin.display(description=_("Terms"), ordering="_term_count")
     def term_count(self, obj) -> int:  # type: ignore[no-untyped-def]
@@ -138,7 +139,9 @@ class TermAdmin(*_term_admin_bases):  # type: ignore[misc]
 
     list_display = ("indented_title", "slug", "vocabulary", "is_active")
     list_filter = ("vocabulary", "is_active", "depth")
+    list_select_related = ("vocabulary",)
     search_fields = ("name", "slug")
+    autocomplete_fields = ("vocabulary", "parent")
 
     def get_readonly_fields(self, request, obj=None):  # type: ignore[no-untyped-def]
         base = ["path", "depth", "order"]
@@ -200,7 +203,7 @@ def _active_terms_filter():  # type: ignore[no-untyped-def]
     """
     from django.db.models import Q
 
-    return Q(terms__is_active=True)
+    return Q(term_set__is_active=True)
 
 
 def _register_admin() -> None:

@@ -215,7 +215,7 @@ class TestTermDeletedSignal:
         association_ids_seen = []
 
         def handler(term, **kwargs) -> None:
-            association_ids_seen.extend(list(term.associations.values_list("pk", flat=True)))
+            association_ids_seen.extend(list(term.termassociation_set.values_list("pk", flat=True)))
 
         term_deleted.connect(handler, weak=False)
         try:
