@@ -27,3 +27,11 @@ def allow_hard_delete(settings):
     settings.ICV_CORE_ALLOW_HARD_DELETE = True
     yield
     settings.ICV_CORE_ALLOW_HARD_DELETE = False
+
+
+@pytest.fixture
+def track_created_by(settings):
+    """Enable created_by/updated_by auto-population for the duration of a test."""
+    settings.ICV_CORE_TRACK_CREATED_BY = True
+    yield
+    settings.ICV_CORE_TRACK_CREATED_BY = False

@@ -17,6 +17,15 @@ class ComplianceModel(BaseModel):
     When middleware is not present (e.g., management commands, Celery tasks),
     both fields remain null. Consuming code should populate them explicitly
     in those contexts.
+
+    Auto-population behaviour
+    -------------------------
+    - ``created_by`` is populated on INSERT only, and only when it has not
+      been set explicitly by the caller.
+    - ``updated_by`` is populated on every save (INSERT and UPDATE).
+    - Both fields are left untouched when ICV_CORE_TRACK_CREATED_BY is False
+      or when ``get_current_user()`` returns None (no active request).
+    - Explicitly set values are never overridden.
     """
 
     created_by = models.ForeignKey(
@@ -40,3 +49,23 @@ class ComplianceModel(BaseModel):
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs) -> None:
+        """
+        Override save to auto-populate created_by and updated_by.
+
+        Uses get_setting() at call time (not import time) so that the
+        ICV_CORE_TRACK_CREATED_BY pytest ``settings`` fixture override is
+        respected during tests.
+        """
+        from icv_core.conf import get_setting
+        from icv_core.middleware import get_current_user
+
+        if get_setting("TRACK_CREATED_BY", False):
+            user = get_current_user()
+            if user is not None:
+                if self._state.adding and self.created_by_id is None:
+                    self.created_by = user
+                self.updated_by = user
+
+        super().save(*args, **kwargs)
