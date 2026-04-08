@@ -176,6 +176,67 @@ class TestTermCreatedSignal:
 
 
 @pytest.mark.django_db
+class TestClearVocabularySignals:
+    """Test clear_vocabulary() signal emission behaviour.
+
+    Django's ORM fires pre_delete (and therefore the handle_term_pre_delete
+    handler → term_deleted) for every instance even on queryset bulk deletes.
+    When emit_signals=True the service adds an *explicit* emission before the
+    bulk delete, resulting in two calls per term: one explicit, one from the
+    ORM pre_delete handler.
+    """
+
+    def test_emit_signals_false_fires_term_deleted_via_orm_handler(self, db, flat_vocabulary):
+        """Django's pre_delete handler fires once per term even when emit_signals=False."""
+        from icv_taxonomy.services import clear_vocabulary
+        from icv_taxonomy.signals import term_deleted
+
+        term_count = flat_vocabulary.terms.count()
+
+        cap = _SignalCapture()
+        term_deleted.connect(cap, weak=False)
+        try:
+            clear_vocabulary(flat_vocabulary, emit_signals=False)
+        finally:
+            term_deleted.disconnect(cap)
+
+        # The ORM pre_delete handler fires once per term regardless.
+        assert len(cap.calls) == term_count
+
+    def test_emit_signals_true_fires_term_deleted_twice_per_term(self, db, flat_vocabulary):
+        """emit_signals=True adds an explicit emission before the ORM pre_delete, doubling calls."""
+        from icv_taxonomy.services import clear_vocabulary
+        from icv_taxonomy.signals import term_deleted
+
+        term_count = flat_vocabulary.terms.count()
+
+        cap = _SignalCapture()
+        term_deleted.connect(cap, weak=False)
+        try:
+            clear_vocabulary(flat_vocabulary, emit_signals=True)
+        finally:
+            term_deleted.disconnect(cap)
+
+        # Explicit emission (one per term) + ORM pre_delete handler (one per term).
+        assert len(cap.calls) == term_count * 2
+
+    def test_emit_signals_true_includes_vocabulary_kwarg(self, db, flat_vocabulary):
+        """Each explicitly emitted term_deleted call carries the vocabulary keyword argument."""
+        from icv_taxonomy.services import clear_vocabulary
+        from icv_taxonomy.signals import term_deleted
+
+        cap = _SignalCapture()
+        term_deleted.connect(cap, weak=False)
+        try:
+            clear_vocabulary(flat_vocabulary, emit_signals=True)
+        finally:
+            term_deleted.disconnect(cap)
+
+        for call in cap.calls:
+            assert call["vocabulary"].pk == flat_vocabulary.pk
+
+
+@pytest.mark.django_db
 class TestTermDeletedSignal:
     """Test AC-TAX-039: term_deleted emitted before term deletion (pre-delete)."""
 

@@ -123,6 +123,90 @@ class TestDeleteVocabulary:
         assert Term.all_objects.filter(vocabulary_id=vocab_pk).count() == 0
 
 
+@pytest.mark.django_db
+class TestClearVocabulary:
+    """Tests for clear_vocabulary()."""
+
+    def test_removes_all_terms(self, flat_vocabulary):
+        """All terms in the vocabulary are deleted."""
+        from icv_taxonomy.models import Term
+        from icv_taxonomy.services import clear_vocabulary
+
+        assert Term.all_objects.filter(vocabulary=flat_vocabulary).count() > 0
+        clear_vocabulary(flat_vocabulary)
+        assert Term.all_objects.filter(vocabulary=flat_vocabulary).count() == 0
+
+    def test_preserves_vocabulary(self, flat_vocabulary):
+        """The vocabulary itself is not deleted."""
+        from icv_taxonomy.models import Vocabulary
+        from icv_taxonomy.services import clear_vocabulary
+
+        vocab_pk = flat_vocabulary.pk
+        clear_vocabulary(flat_vocabulary)
+        assert Vocabulary.all_objects.filter(pk=vocab_pk).exists()
+
+    def test_returns_correct_count(self, flat_vocabulary):
+        """Return value equals the number of terms that were deleted."""
+        from icv_taxonomy.services import clear_vocabulary
+
+        # flat_vocabulary fixture creates 5 terms.
+        count = clear_vocabulary(flat_vocabulary)
+        assert count == 5
+
+    def test_returns_zero_on_empty_vocabulary(self, db):
+        """Returns 0 when the vocabulary has no terms."""
+        from icv_taxonomy.services import clear_vocabulary, create_vocabulary
+
+        empty = create_vocabulary(name="Empty Vocab", vocabulary_type="flat")
+        count = clear_vocabulary(empty)
+        assert count == 0
+
+    def test_cascades_to_term_associations(self, flat_vocabulary, article):
+        """Clearing the vocabulary removes all TermAssociation rows for its terms."""
+        from django.apps import apps
+
+        from icv_taxonomy.services import clear_vocabulary, tag_object
+
+        term = flat_vocabulary.terms.first()
+        tag_object(term, article)
+
+        TermAssociation = apps.get_model("icv_taxonomy", "TermAssociation")
+        assert TermAssociation.objects.filter(term=term).count() == 1
+
+        clear_vocabulary(flat_vocabulary)
+        assert TermAssociation.objects.filter(term=term).count() == 0
+
+    def test_cascades_to_term_relationships(self, flat_vocabulary):
+        """Clearing the vocabulary removes all TermRelationship rows for its terms."""
+        from django.apps import apps
+
+        from icv_taxonomy.services import add_relationship, clear_vocabulary
+
+        terms = list(flat_vocabulary.terms.all()[:2])
+        add_relationship(terms[0], terms[1], "related")
+
+        TermRelationship = apps.get_model("icv_taxonomy", "TermRelationship")
+        assert TermRelationship.objects.filter(term_from=terms[0]).count() == 1
+
+        clear_vocabulary(flat_vocabulary)
+        assert TermRelationship.objects.filter(term_from=terms[0]).count() == 0
+
+    def test_includes_inactive_terms(self, flat_vocabulary):
+        """Inactive terms are also deleted (all_objects manager is used)."""
+        from icv_taxonomy.models import Term
+        from icv_taxonomy.services import clear_vocabulary, deactivate_term
+
+        first_term = flat_vocabulary.terms.first()
+        deactivate_term(first_term)
+
+        # Confirm at least one term is inactive.
+        assert Term.all_objects.filter(vocabulary=flat_vocabulary, is_active=False).exists()
+
+        count = clear_vocabulary(flat_vocabulary)
+        assert count == 5
+        assert Term.all_objects.filter(vocabulary=flat_vocabulary).count() == 0
+
+
 # ===========================================================================
 # term_management
 # ===========================================================================

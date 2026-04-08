@@ -147,6 +147,49 @@ def update_vocabulary(vocabulary: Any, **kwargs: Any) -> Any:
     return vocabulary
 
 
+def clear_vocabulary(vocabulary: Any, *, emit_signals: bool = False) -> int:
+    """Delete all terms in a vocabulary without deleting the vocabulary itself.
+
+    Uses a single bulk DELETE that cascades to term relationships and
+    associations via database CASCADE constraints.
+
+    Args:
+        vocabulary: Vocabulary instance to clear.
+        emit_signals: When True, explicitly emit term_deleted for each term
+            before the bulk DELETE. Default False. Note: Django's ORM also
+            fires pre_delete (and therefore the term_deleted handler) per
+            instance during queryset deletion regardless of this flag; this
+            parameter controls whether the service emits an *additional*
+            explicit signal before the delete, giving callers early notice
+            with controlled keyword arguments.
+
+    Returns:
+        Number of terms deleted.
+
+    Side effects:
+        Deletes all Term rows for the vocabulary and all cascaded rows
+        (TermAssociation, TermRelationship).
+        When emit_signals=True, emits ``term_deleted`` for each term before
+        the bulk delete.
+    """
+    from ..conf import get_term_model
+    from ..signals import term_deleted
+
+    Term = get_term_model()
+    qs = Term.all_objects.filter(vocabulary=vocabulary)
+
+    if emit_signals:
+        for term in qs:
+            term_deleted.send(
+                sender=Term,
+                term=term,
+                vocabulary=vocabulary,
+            )
+
+    deleted_count, _ = qs.delete()
+    return deleted_count
+
+
 def delete_vocabulary(vocabulary: Any) -> None:
     """Delete a Vocabulary and all its related terms and associations.
 

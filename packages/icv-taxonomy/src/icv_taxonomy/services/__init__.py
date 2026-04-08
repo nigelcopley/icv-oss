@@ -22,13 +22,14 @@ from .term_management import (
     move_term,
     update_term,
 )
-from .vocabulary_management import create_vocabulary, delete_vocabulary, update_vocabulary
+from .vocabulary_management import clear_vocabulary, create_vocabulary, delete_vocabulary, update_vocabulary
 
 __all__ = [
     # vocabulary_management
     "create_vocabulary",
     "update_vocabulary",
     "delete_vocabulary",
+    "clear_vocabulary",
     # term_management
     "create_term",
     "update_term",
