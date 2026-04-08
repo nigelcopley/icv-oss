@@ -373,20 +373,10 @@ class TestIcvCoreCheckCommand:
 
     def test_command_does_not_accept_fix_flag(self):
         """--fix was removed; passing it must raise a SystemExit (argparse error)."""
-        import subprocess
-        import sys
+        from django.core.management import CommandError, call_command
 
-        result = subprocess.run(
-            [sys.executable, "-m", "django", "icv_core_check", "--fix"],
-            capture_output=True,
-            env={
-                **__import__("os").environ,
-                "DJANGO_SETTINGS_MODULE": "tests.settings",
-                "PYTHONPATH": "src:tests",
-            },
-            cwd="/Users/nigelcopley/Projects/icv-oss/packages/icv-core",
-        )
-        assert result.returncode != 0
+        with pytest.raises((CommandError, SystemExit)):
+            call_command("icv_core_check", "--fix")
 
     def test_stderr_warns_when_issues_found(self):
         """Issues are written to stderr, not stdout."""
