@@ -18,15 +18,43 @@ class TestUUIDModel:
         assert field.primary_key is True
         assert field.editable is False
 
-    def test_default_is_uuid4_callable(self):
+    def test_default_is_callable(self):
         field = UUIDModel._meta.get_field("id")
-        # default should be callable (uuid.uuid4)
         assert callable(field.default)
 
     def test_generated_pk_is_valid_uuid(self):
         field = ConcreteBaseModel._meta.get_field("id")
         value = field.default()
         assert isinstance(value, uuid.UUID)
+
+    def test_default_uuid_version_is_4(self):
+        """Without any setting override, _make_uuid() returns a v4 UUID."""
+        from icv_core.models.base import _make_uuid
+
+        value = _make_uuid()
+        assert isinstance(value, uuid.UUID)
+        assert value.version == 4
+
+    def test_uuid_version_7_returns_v7(self, settings):
+        """When ICV_CORE_UUID_VERSION=7 is set, _make_uuid() returns a v7 UUID."""
+        settings.ICV_CORE_UUID_VERSION = 7
+
+        from icv_core.models.base import _make_uuid
+
+        value = _make_uuid()
+        assert isinstance(value, uuid.UUID)
+        assert value.version == 7
+
+    def test_uuid_v7_timestamp_is_non_decreasing(self, settings):
+        """The 48-bit ms-timestamp embedded in successive v7 UUIDs must never go backwards."""
+        settings.ICV_CORE_UUID_VERSION = 7
+
+        from icv_core.models.base import _make_uuid
+
+        values = [_make_uuid() for _ in range(20)]
+        # The top 48 bits of the UUID int encode the millisecond timestamp.
+        timestamps = [v.int >> 80 for v in values]
+        assert timestamps == sorted(timestamps)
 
 
 class TestTimestampedModel:
