@@ -7,13 +7,6 @@ from django.utils.translation import gettext as _
 class Command(BaseCommand):
     help = _("Validate icv-core configuration and report common issues.")
 
-    def add_arguments(self, parser) -> None:
-        parser.add_argument(
-            "--fix",
-            action="store_true",
-            help=_("Attempt to auto-correct common configuration issues."),
-        )
-
     def handle(self, *args, **options) -> None:
         from icv_core import conf
 

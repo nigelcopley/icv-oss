@@ -371,15 +371,22 @@ class TestIcvCoreCheckCommand:
         assert "CurrentUserMiddleware" in output
         assert "AuditRequestMiddleware" in output
 
-    def test_command_accepts_fix_flag_without_error(self):
-        """--fix is a declared flag; the command must not crash when passed."""
-        from django.test import override_settings
+    def test_command_does_not_accept_fix_flag(self):
+        """--fix was removed; passing it must raise a SystemExit (argparse error)."""
+        import subprocess
+        import sys
 
-        with (
-            _patch_conf(ICV_CORE_TRACK_CREATED_BY=False, ICV_CORE_AUDIT_ENABLED=False),
-            override_settings(MIDDLEWARE=[]),
-        ):
-            call_command("icv_core_check", fix=True, stdout=StringIO(), stderr=StringIO())
+        result = subprocess.run(
+            [sys.executable, "-m", "django", "icv_core_check", "--fix"],
+            capture_output=True,
+            env={
+                **__import__("os").environ,
+                "DJANGO_SETTINGS_MODULE": "tests.settings",
+                "PYTHONPATH": "src:tests",
+            },
+            cwd="/Users/nigelcopley/Projects/icv-oss/packages/icv-core",
+        )
+        assert result.returncode != 0
 
     def test_stderr_warns_when_issues_found(self):
         """Issues are written to stderr, not stdout."""
