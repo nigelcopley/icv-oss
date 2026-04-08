@@ -9,6 +9,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-04-08
+
+Promoted to Production/Stable.
+
+### Added
+
+- `clear_vocabulary(vocab)` — delete all terms without deleting the
+  vocabulary; single bulk DELETE with database CASCADE
+- 50 new tests covering admin, management commands, template tags,
+  clear_vocabulary, and signal emission
+
+### Changed
+
+- `merge_terms()` rewritten with bulk operations — batch duplicate
+  detection, bulk UPDATE for associations/relationships, `bulk_update()`
+  for child reparenting. ~1,800 queries → ~18 for a typical merge (100x).
+- `import_vocabulary()` uses `bulk_update()` for existing terms instead
+  of per-term `save()`. ~30,000 queries → ~100 for 10K terms (300x).
+- VocabularyAdmin resolves term related_name dynamically via
+  `_get_term_related_name()` instead of hardcoded `"term_set"`, fixing
+  breakage with custom Term subclasses via `ICV_TAXONOMY_TERM_MODEL`.
+
+### Fixed
+
+- `__version__` synced with pyproject.toml (was 0.1.0, now 0.3.0)
+- `%(class)s_set` related_name pattern on all ForeignKeys for swappable
+  model support
+
 ## [0.2.1] — 2026-03-30
 
 ### Fixed
