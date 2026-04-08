@@ -283,8 +283,6 @@ def merge_terms(
         Sets ``source.is_active = False``.
         Emits ``term_merged`` signal on commit.
     """
-    from django.db import IntegrityError
-
     from ..conf import get_term_model
     from ..signals import term_merged
 
@@ -330,76 +328,97 @@ def merge_terms(
         TermAssociation = _get_association_model()
         TermRelationship = _get_relationship_model()
 
-        # --- Step 1: Re-parent children ---
+        # --- Step 1: Re-parent children (bulk) ---
         if children:
             new_parent = target if children_strategy == "reparent" else source.parent
+            children_reparented = len(children)
 
             for child in children:
                 child.parent = new_parent
-                child.save(update_fields=["parent"])
-                children_reparented += 1
+            Term.objects.bulk_update(children, ["parent"])
 
         # --- Step 2: Transfer associations (BR-TAX-024) ---
-        # For each source association, attempt to re-point it at target.
-        # Skip if (target, content_type, object_id) already exists.
-        source_assocs = list(TermAssociation.objects.filter(term=source))
-        for assoc in source_assocs:
-            duplicate_exists = TermAssociation.objects.filter(
-                term=target,
-                content_type_id=assoc.content_type_id,
-                object_id=assoc.object_id,
-            ).exists()
-            if duplicate_exists:
-                assoc.delete()
+        # Batch: find which source associations would be duplicates on target,
+        # delete those, and bulk-reassign the rest.
+        source_assocs = TermAssociation.objects.filter(term=source)
+
+        # Identify duplicates in one query: source assocs whose (ct, oid)
+        # already exists on target.
+        existing_on_target = set(
+            TermAssociation.objects.filter(term=target).values_list("content_type_id", "object_id")
+        )
+
+        duplicate_ids = []
+        transfer_ids = []
+        for assoc in source_assocs.values_list("pk", "content_type_id", "object_id"):
+            pk, ct_id, oid = assoc
+            if (ct_id, oid) in existing_on_target:
+                duplicate_ids.append(pk)
             else:
-                assoc.term = target
-                assoc.save(update_fields=["term"])
-                associations_transferred += 1
+                transfer_ids.append(pk)
+
+        # Delete duplicates in bulk.
+        if duplicate_ids:
+            TermAssociation.objects.filter(pk__in=duplicate_ids).delete()
+
+        # Transfer remaining in bulk.
+        associations_transferred = TermAssociation.objects.filter(pk__in=transfer_ids).update(term=target)
 
         # --- Step 3: Transfer relationships (BR-TAX-025) ---
-        # Handle term_from side.
-        from_rels = list(TermRelationship.objects.filter(term_from=source))
-        for rel in from_rels:
-            # Skip self-loop: if source's rel points to target and we would
-            # create (target, target, type).
-            if rel.term_to_id == target.pk:
-                rel.delete()
-                continue
-            duplicate_exists = TermRelationship.objects.filter(
-                term_from=target,
-                term_to_id=rel.term_to_id,
-                relationship_type=rel.relationship_type,
-            ).exists()
-            if duplicate_exists:
-                rel.delete()
-            else:
-                rel.term_from = target
-                try:
-                    rel.save(update_fields=["term_from"])
-                    relationships_transferred += 1
-                except IntegrityError:
-                    rel.delete()
+        # Handle term_from side — batch approach.
+        from_rels = list(
+            TermRelationship.objects.filter(term_from=source).values_list("pk", "term_to_id", "relationship_type")
+        )
 
-        # Handle term_to side.
-        to_rels = list(TermRelationship.objects.filter(term_to=source))
-        for rel in to_rels:
-            if rel.term_from_id == target.pk:
-                rel.delete()
-                continue
-            duplicate_exists = TermRelationship.objects.filter(
-                term_from_id=rel.term_from_id,
-                term_to=target,
-                relationship_type=rel.relationship_type,
-            ).exists()
-            if duplicate_exists:
-                rel.delete()
+        # Self-loops (source→target becomes target→target) must be deleted.
+        from_selfloop_ids = [pk for pk, to_id, _ in from_rels if to_id == target.pk]
+
+        # Find existing (target, term_to, type) combos to detect duplicates.
+        existing_from_target = set(
+            TermRelationship.objects.filter(term_from=target).values_list("term_to_id", "relationship_type")
+        )
+
+        from_dup_ids = []
+        from_transfer_ids = []
+        for pk, to_id, rel_type in from_rels:
+            if to_id == target.pk:
+                continue  # already in selfloop list
+            if (to_id, rel_type) in existing_from_target:
+                from_dup_ids.append(pk)
             else:
-                rel.term_to = target
-                try:
-                    rel.save(update_fields=["term_to"])
-                    relationships_transferred += 1
-                except IntegrityError:
-                    rel.delete()
+                from_transfer_ids.append(pk)
+
+        # Handle term_to side — same batch approach.
+        to_rels = list(
+            TermRelationship.objects.filter(term_to=source).values_list("pk", "term_from_id", "relationship_type")
+        )
+
+        to_selfloop_ids = [pk for pk, from_id, _ in to_rels if from_id == target.pk]
+
+        existing_to_target = set(
+            TermRelationship.objects.filter(term_to=target).values_list("term_from_id", "relationship_type")
+        )
+
+        to_dup_ids = []
+        to_transfer_ids = []
+        for pk, from_id, rel_type in to_rels:
+            if from_id == target.pk:
+                continue
+            if (from_id, rel_type) in existing_to_target:
+                to_dup_ids.append(pk)
+            else:
+                to_transfer_ids.append(pk)
+
+        # Execute bulk deletes and updates.
+        delete_ids = from_selfloop_ids + from_dup_ids + to_selfloop_ids + to_dup_ids
+        if delete_ids:
+            TermRelationship.objects.filter(pk__in=delete_ids).delete()
+
+        from_transferred = TermRelationship.objects.filter(pk__in=from_transfer_ids).update(term_from=target)
+
+        to_transferred = TermRelationship.objects.filter(pk__in=to_transfer_ids).update(term_to=target)
+
+        relationships_transferred = from_transferred + to_transferred
 
         # --- Step 4: Deactivate source (BR-TAX-026) ---
         source.is_active = False
