@@ -113,7 +113,12 @@ class VocabularyAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):  # type: ignore[no-untyped-def]
         """Annotate queryset with active term count."""
-        return super().get_queryset(request).annotate(_term_count=Count("term_set", filter=_active_terms_filter()))
+        related_name = _get_term_related_name()
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(_term_count=Count(related_name, filter=_active_terms_filter(related_name)))
+        )
 
     @admin.display(description=_("Terms"), ordering="_term_count")
     def term_count(self, obj) -> int:  # type: ignore[no-untyped-def]
@@ -196,14 +201,29 @@ class TermAdmin(*_term_admin_bases):  # type: ignore[misc]
 # ---------------------------------------------------------------------------
 
 
-def _active_terms_filter():  # type: ignore[no-untyped-def]
+def _get_term_related_name() -> str:
+    """Return the reverse relation name from Vocabulary to the Term model.
+
+    Resolves dynamically so that custom Term subclasses with ``%(class)s_set``
+    related_name patterns work correctly (e.g. ``term_set`` for the default
+    Term model, ``productterm_set`` for a custom ProductTerm subclass).
+    """
+    from .conf import get_term_model
+
+    Term = get_term_model()
+    return f"{Term.__name__.lower()}_set"
+
+
+def _active_terms_filter(related_name: str | None = None):  # type: ignore[no-untyped-def]
     """Return a Q object filtering terms to is_active=True.
 
     Kept as a function to defer import of django.db.models.Q until needed.
     """
     from django.db.models import Q
 
-    return Q(term_set__is_active=True)
+    if related_name is None:
+        related_name = _get_term_related_name()
+    return Q(**{f"{related_name}__is_active": True})
 
 
 def _register_admin() -> None:
