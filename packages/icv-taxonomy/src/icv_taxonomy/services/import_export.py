@@ -182,7 +182,7 @@ def import_vocabulary(
     """
     from ..conf import get_term_model, get_vocabulary_model
     from .relationships import add_relationship
-    from .term_management import create_term, update_term
+    from .term_management import create_term
     from .vocabulary_management import create_vocabulary
 
     created = 0
@@ -239,46 +239,60 @@ def import_vocabulary(
         # appear before their children in the terms list.
         imported_terms: dict[str, Any] = dict(existing_terms)
 
+        # Separate new and existing terms for batch processing.
+        to_update: list[Any] = []
+        to_create_data: list[tuple[dict, Any | None]] = []  # (term_data, parent)
+
         for term_data in terms_data:
             slug = term_data["slug"]
-            name = term_data.get("name", slug)
-            description = term_data.get("description", "")
             parent_slug = term_data.get("parent_slug")
-            is_active = term_data.get("is_active", True)
-            metadata = term_data.get("metadata", {})
 
             parent: Any | None = None
             if parent_slug is not None:
                 parent = imported_terms.get(parent_slug)
                 if parent is None:
-                    # Parent not yet imported — skip and rely on caller to
-                    # re-sort or accept the partial import.
                     skipped += 1
                     continue
 
             if slug in existing_terms:
                 term = existing_terms[slug]
-                update_term(
-                    term,
-                    name=name,
-                    description=description,
-                    is_active=is_active,
-                    metadata=metadata,
-                )
+                changed = False
+                for field in ("name", "description", "is_active", "metadata"):
+                    new_val = term_data.get(field)
+                    if new_val is not None and getattr(term, field, None) != new_val:
+                        setattr(term, field, new_val)
+                        changed = True
+                if changed:
+                    to_update.append(term)
                 imported_terms[slug] = term
                 updated += 1
             else:
-                term = create_term(
-                    vocabulary=vocabulary,
-                    name=name,
-                    slug=slug,
-                    parent=parent,
-                    description=description,
-                    is_active=is_active,
-                    metadata=metadata,
-                )
-                imported_terms[slug] = term
-                created += 1
+                to_create_data.append((term_data, parent))
+                # We'll add to imported_terms after create_term so parents
+                # are available for subsequent children.
+
+        # Batch-update existing terms in one query.
+        if to_update:
+            Term.objects.bulk_update(to_update, ["name", "description", "is_active", "metadata"])
+
+        # Create new terms — must be sequential (parents before children for
+        # path computation), but we skip the tree signal handler overhead by
+        # using create_term which handles path computation correctly.
+        # For very large imports, callers should use skip_tree_signals +
+        # rebuild() after import for best performance.
+        for term_data, parent in to_create_data:
+            slug = term_data["slug"]
+            term = create_term(
+                vocabulary=vocabulary,
+                name=term_data.get("name", slug),
+                slug=slug,
+                parent=parent,
+                description=term_data.get("description", ""),
+                is_active=term_data.get("is_active", True),
+                metadata=term_data.get("metadata", {}),
+            )
+            imported_terms[slug] = term
+            created += 1
 
         # --- Step 4: Import relationships (idempotent via add_relationship) ---
         for rel_data in data.get("relationships", []):
@@ -290,13 +304,11 @@ def import_vocabulary(
             term_to = imported_terms.get(to_slug)
 
             if term_from is None or term_to is None:
-                # One or both terms were not imported; skip this relationship.
                 continue
 
             try:
                 add_relationship(term_from, term_to, rel_type)
             except TaxonomyValidationError:
-                # Self-relationship or other validation error — skip.
                 pass
 
     return {"created": created, "updated": updated, "skipped": skipped}
