@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-08
+
+Promoted to Production/Stable.
+
+### Added
+
+- `ComplianceModel.save()` auto-populates `created_by` (on insert) and
+  `updated_by` (on every save) from `CurrentUserMiddleware` when
+  `ICV_CORE_TRACK_CREATED_BY` is True. Explicit values are preserved.
+- UUID v7 support (RFC 9562) — when `ICV_CORE_UUID_VERSION=7`,
+  `UUIDModel` generates time-sortable UUIDs using a pure-stdlib
+  implementation. No third-party dependency required.
+- 28 new tests for ComplianceModel auto-population and UUID v7
+
+### Removed
+
+- Unused `--fix` flag from `icv_core_check` management command
+
 ## [0.1.0] - 2026-03-14
 
 ### Added

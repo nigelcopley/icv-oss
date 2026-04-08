@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-icv-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Foundation layer for ICV-Django: abstract base models, managers, middleware, utilities, and audit logging."
 readme = "README.md"
 license = "MIT"
@@ -13,7 +13,7 @@ authors = [
     {name = "Nigel Copley"},
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Framework :: Django",
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
