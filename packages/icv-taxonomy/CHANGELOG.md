@@ -9,6 +9,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-04-18
+
+### Fixed
+
+- `AbstractTermRelationship` and `AbstractTermAssociation` now declare
+  `id = models.BigAutoField(...)` explicitly instead of relying on
+  `default_auto_field` resolution. Consumer projects with a different
+  `DEFAULT_AUTO_FIELD` setting no longer get phantom `AlterField`
+  migrations for these junction tables.
+
 ## [0.3.0] — 2026-04-08
 
 Promoted to Production/Stable.

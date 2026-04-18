@@ -495,6 +495,12 @@ class AbstractTermRelationship(models.Model):
     The concrete default is ``TermRelationship``.
     """
 
+    id = models.BigAutoField(
+        auto_created=True,
+        primary_key=True,
+        serialize=False,
+        verbose_name=_("ID"),
+    )
     term_from = models.ForeignKey(
         getattr(django_settings, "ICV_TAXONOMY_TERM_MODEL", "icv_taxonomy.Term"),
         on_delete=models.CASCADE,
@@ -570,6 +576,12 @@ class AbstractTermAssociation(models.Model):
     The concrete default is ``TermAssociation``.
     """
 
+    id = models.BigAutoField(
+        auto_created=True,
+        primary_key=True,
+        serialize=False,
+        verbose_name=_("ID"),
+    )
     term = models.ForeignKey(
         getattr(django_settings, "ICV_TAXONOMY_TERM_MODEL", "icv_taxonomy.Term"),
         on_delete=models.CASCADE,
