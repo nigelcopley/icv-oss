@@ -9,6 +9,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-04-20
+
+### Fixed
+
+- Standalone fallback base model now provides UUID primary key and
+  `created_at`/`updated_at` timestamps (matching `icv_core.BaseModel`)
+  instead of bare `models.Model`. Installing icv-taxonomy without
+  django-icv-core no longer breaks the model schema.
+- Admin no longer conditionally hides timestamp fields when icv-core is
+  absent — timestamps are always present and always shown.
+
 ## [0.3.1] — 2026-04-18
 
 ### Fixed

@@ -17,13 +17,6 @@ from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
 
 try:
-    import icv_core  # noqa: F401
-
-    _HAS_CORE = True
-except ImportError:
-    _HAS_CORE = False
-
-try:
     from icv_tree.admin import TreeAdmin as _TreeAdmin
 except ImportError:
     _TreeAdmin = None  # type: ignore[assignment, misc]
@@ -74,12 +67,11 @@ class VocabularyAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):  # type: ignore[no-untyped-def]
         base = list(super().get_readonly_fields(request, obj))
-        if _HAS_CORE:
-            base += ["created_at", "updated_at"]
+        base += ["created_at", "updated_at"]
         return base
 
     def get_fieldsets(self, request, obj=None):  # type: ignore[no-untyped-def]
-        fieldsets = [
+        return [
             (
                 _("General"),
                 {
@@ -98,18 +90,14 @@ class VocabularyAdmin(admin.ModelAdmin):
                     "fields": ("metadata", "is_active"),
                 },
             ),
+            (
+                _("Timestamps"),
+                {
+                    "classes": ("collapse",),
+                    "fields": ("created_at", "updated_at"),
+                },
+            ),
         ]
-        if _HAS_CORE:
-            fieldsets.append(
-                (
-                    _("Timestamps"),
-                    {
-                        "classes": ("collapse",),
-                        "fields": ("created_at", "updated_at"),
-                    },
-                ),
-            )
-        return fieldsets
 
     def get_queryset(self, request):  # type: ignore[no-untyped-def]
         """Annotate queryset with active term count."""
@@ -149,13 +137,10 @@ class TermAdmin(*_term_admin_bases):  # type: ignore[misc]
     autocomplete_fields = ("vocabulary", "parent")
 
     def get_readonly_fields(self, request, obj=None):  # type: ignore[no-untyped-def]
-        base = ["path", "depth", "order"]
-        if _HAS_CORE:
-            base += ["created_at", "updated_at"]
-        return base
+        return ["path", "depth", "order", "created_at", "updated_at"]
 
     def get_fieldsets(self, request, obj=None):  # type: ignore[no-untyped-def]
-        fieldsets = [
+        return [
             (
                 _("General"),
                 {
@@ -175,18 +160,14 @@ class TermAdmin(*_term_admin_bases):  # type: ignore[misc]
                     "fields": ("metadata", "is_active"),
                 },
             ),
+            (
+                _("Timestamps"),
+                {
+                    "classes": ("collapse",),
+                    "fields": ("created_at", "updated_at"),
+                },
+            ),
         ]
-        if _HAS_CORE:
-            fieldsets.append(
-                (
-                    _("Timestamps"),
-                    {
-                        "classes": ("collapse",),
-                        "fields": ("created_at", "updated_at"),
-                    },
-                ),
-            )
-        return fieldsets
 
     def get_inlines(self, request, obj):  # type: ignore[no-untyped-def]
         """Build and return TermRelationshipInline lazily."""

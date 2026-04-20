@@ -17,6 +17,7 @@ Provides:
 
 from __future__ import annotations
 
+import uuid
 from typing import TYPE_CHECKING
 
 from django.conf import settings as django_settings
@@ -41,7 +42,34 @@ try:
 
     _BASE = _CoreBaseModel
 except ImportError:
-    _BASE = models.Model  # type: ignore[assignment,misc]
+
+    class _BASE(models.Model):  # type: ignore[no-redef,misc]
+        """Standalone base model when icv-core is not installed.
+
+        Provides the same UUID primary key and timestamp fields as
+        ``icv_core.models.BaseModel`` so icv-taxonomy can be used without
+        django-icv-core as a dependency.
+        """
+
+        id = models.UUIDField(
+            primary_key=True,
+            default=uuid.uuid4,
+            editable=False,
+            verbose_name=_("ID"),
+        )
+        created_at = models.DateTimeField(
+            auto_now_add=True,
+            db_index=True,
+            verbose_name=_("created at"),
+        )
+        updated_at = models.DateTimeField(
+            auto_now=True,
+            verbose_name=_("updated at"),
+        )
+
+        class Meta:
+            abstract = True
+            ordering = ["-created_at"]
 
 
 # ------------------------------------------------------------------
