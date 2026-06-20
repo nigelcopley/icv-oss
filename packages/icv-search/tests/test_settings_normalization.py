@@ -7,8 +7,6 @@ fields.  ``normalize_engine_settings`` translates known aliases on the way out
 of ``_sync_index_to_engine`` so sync stays resilient to legacy/seeded data.
 """
 
-import pytest
-
 from icv_search.backends.dummy import _settings
 from icv_search.services.indexing import (
     _sync_index_to_engine,
