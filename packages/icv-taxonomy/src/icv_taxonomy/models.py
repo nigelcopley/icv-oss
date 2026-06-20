@@ -197,8 +197,10 @@ class AbstractVocabulary(_BASE):  # type: ignore[valid-type,misc]
         help_text=_("Inactive vocabularies are hidden from default querysets."),
     )
 
+    # `objects` must be declared first so the active-filtering manager stays the
+    # default manager; DJ012 misreads the custom manager as a field.
     objects = ActiveVocabularyManager()
-    all_objects = models.Manager()
+    all_objects = models.Manager()  # noqa: DJ012
 
     class Meta:
         abstract = True
@@ -206,6 +208,26 @@ class AbstractVocabulary(_BASE):  # type: ignore[valid-type,misc]
 
     def __str__(self) -> str:
         return self.name
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[override]
+        """Auto-generate and normalise slug before saving.
+
+        BR-TAX-043: Auto-generate slug from name when blank.
+        BR-TAX-034: Lowercase slug when ICV_TAXONOMY_CASE_SENSITIVE_SLUGS is False.
+        """
+        from .conf import get_setting
+
+        auto_slug = get_setting("ICV_TAXONOMY_AUTO_SLUG", True)
+        case_sensitive = get_setting("ICV_TAXONOMY_CASE_SENSITIVE_SLUGS", False)
+        max_length = get_setting("ICV_TAXONOMY_SLUG_MAX_LENGTH", 255)
+
+        if not self.slug and auto_slug and self.name:
+            self.slug = slugify(self.name)[:max_length]
+
+        if self.slug and not case_sensitive:
+            self.slug = self.slug.lower()
+
+        super().save(*args, **kwargs)
 
     @property
     def terms(self) -> models.QuerySet:
@@ -239,26 +261,6 @@ class AbstractVocabulary(_BASE):  # type: ignore[valid-type,misc]
                     raise ValidationError(
                         {"vocabulary_type": _("Cannot change vocabulary type once terms exist (BR-TAX-002).")}
                     )
-
-    def save(self, *args, **kwargs) -> None:  # type: ignore[override]
-        """Auto-generate and normalise slug before saving.
-
-        BR-TAX-043: Auto-generate slug from name when blank.
-        BR-TAX-034: Lowercase slug when ICV_TAXONOMY_CASE_SENSITIVE_SLUGS is False.
-        """
-        from .conf import get_setting
-
-        auto_slug = get_setting("ICV_TAXONOMY_AUTO_SLUG", True)
-        case_sensitive = get_setting("ICV_TAXONOMY_CASE_SENSITIVE_SLUGS", False)
-        max_length = get_setting("ICV_TAXONOMY_SLUG_MAX_LENGTH", 255)
-
-        if not self.slug and auto_slug and self.name:
-            self.slug = slugify(self.name)[:max_length]
-
-        if self.slug and not case_sensitive:
-            self.slug = self.slug.lower()
-
-        super().save(*args, **kwargs)
 
 
 # ------------------------------------------------------------------
@@ -356,6 +358,28 @@ class AbstractTerm(TreeNode, _BASE):  # type: ignore[valid-type,misc]
     def __str__(self) -> str:
         return self.name
 
+    def save(self, *args, **kwargs) -> None:  # type: ignore[override]
+        """Auto-generate slug with collision resolution before saving (BR-TAX-007).
+
+        Appends a numeric suffix when the base slug is already taken within
+        this vocabulary, e.g. "my-term", "my-term-2", "my-term-3".
+        """
+        from .conf import get_setting
+
+        auto_slug = get_setting("ICV_TAXONOMY_AUTO_SLUG", True)
+        case_sensitive = get_setting("ICV_TAXONOMY_CASE_SENSITIVE_SLUGS", False)
+        max_length = get_setting("ICV_TAXONOMY_SLUG_MAX_LENGTH", 255)
+
+        if not self.slug and auto_slug and self.name:
+            base_slug = slugify(self.name)[:max_length]
+            if not case_sensitive:
+                base_slug = base_slug.lower()
+            self.slug = self._resolve_slug_collision(base_slug, max_length)
+        elif self.slug and not case_sensitive:
+            self.slug = self.slug.lower()
+
+        super().save(*args, **kwargs)
+
     def clean(self) -> None:
         """Validate term business rules.
 
@@ -450,28 +474,6 @@ class AbstractTerm(TreeNode, _BASE):  # type: ignore[valid-type,misc]
                                 "max_depth": vocab.max_depth,
                             }
                         )
-
-    def save(self, *args, **kwargs) -> None:  # type: ignore[override]
-        """Auto-generate slug with collision resolution before saving (BR-TAX-007).
-
-        Appends a numeric suffix when the base slug is already taken within
-        this vocabulary, e.g. "my-term", "my-term-2", "my-term-3".
-        """
-        from .conf import get_setting
-
-        auto_slug = get_setting("ICV_TAXONOMY_AUTO_SLUG", True)
-        case_sensitive = get_setting("ICV_TAXONOMY_CASE_SENSITIVE_SLUGS", False)
-        max_length = get_setting("ICV_TAXONOMY_SLUG_MAX_LENGTH", 255)
-
-        if not self.slug and auto_slug and self.name:
-            base_slug = slugify(self.name)[:max_length]
-            if not case_sensitive:
-                base_slug = base_slug.lower()
-            self.slug = self._resolve_slug_collision(base_slug, max_length)
-        elif self.slug and not case_sensitive:
-            self.slug = self.slug.lower()
-
-        super().save(*args, **kwargs)
 
     def _resolve_slug_collision(self, base_slug: str, max_length: int) -> str:
         """Return a slug unique within this vocabulary, appending suffix if needed."""
