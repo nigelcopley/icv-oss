@@ -119,9 +119,7 @@ class TestCustomSessionVariables:
             _remove_rls()
             state = _get_fake_state()
             with connection.schema_editor() as editor:
-                DropTenantPolicy("Booking").database_forwards(
-                    "boundary_testapp", editor, state, state
-                )
+                DropTenantPolicy("Booking").database_forwards("boundary_testapp", editor, state, state)
 
 
 # ── Database integration tests ────────────────────────────────

@@ -66,8 +66,7 @@ class TenantContext:
         if tenant is None:
             label = boundary_settings.TENANT_LABEL
             raise TenantNotSetError(
-                f"No {label} is active in context. Set a {label} via "
-                f"TenantContext.using() or TenantMiddleware."
+                f"No {label} is active in context. Set a {label} via TenantContext.using() or TenantMiddleware."
             )
         return tenant
 

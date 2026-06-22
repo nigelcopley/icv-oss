@@ -119,8 +119,7 @@ class CreateTenantPolicy(migrations.operations.base.Operation):
 
         # Admin bypass policy
         schema_editor.execute(
-            f'CREATE POLICY boundary_admin_bypass ON "{table}" '
-            f"USING (current_setting({admin_flag}, TRUE) = 'true')"
+            f"CREATE POLICY boundary_admin_bypass ON \"{table}\" USING (current_setting({admin_flag}, TRUE) = 'true')"
         )
 
     def _detect_tenant_column_type(self, model):

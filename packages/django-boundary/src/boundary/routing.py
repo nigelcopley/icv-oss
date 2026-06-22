@@ -99,23 +99,18 @@ def require_region(tenant=None):
     """
     regions = boundary_settings.REGIONS
     if not regions:
-        raise RegionNotConfiguredError(
-            "BOUNDARY_REGIONS is not configured; no regional routing is active."
-        )
+        raise RegionNotConfiguredError("BOUNDARY_REGIONS is not configured; no regional routing is active.")
 
     if tenant is None:
         tenant = TenantContext.get()
     if tenant is None:
-        raise RegionNotConfiguredError(
-            "No tenant is active in context, so its region cannot be resolved."
-        )
+        raise RegionNotConfiguredError("No tenant is active in context, so its region cannot be resolved.")
 
     region_field = boundary_settings.REGION_FIELD
     region = getattr(tenant, region_field, None)
     if not region or region not in regions:
         raise RegionNotConfiguredError(
-            f"Tenant {tenant.pk!r} has region {region!r}, which is not in "
-            f"BOUNDARY_REGIONS ({sorted(regions)})."
+            f"Tenant {tenant.pk!r} has region {region!r}, which is not in BOUNDARY_REGIONS ({sorted(regions)})."
         )
     return region
 

@@ -70,13 +70,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install "Django~=5.1.0"
           pip install pytest pytest-django pytest-cov pytest-mock factory-boy djangorestframework django-filter
-          pip install psycopg2-binary "psycopg[binary]"
+          pip install psycopg2-binary "psycopg[binary]" packaging
 
       - name: Install all packages
         run: |
+          py="$(python -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
           for pkg in packages/icv-* packages/django-*; do
             if [ -d "$pkg" ]; then
-              echo "Installing $(basename $pkg)..."
+              name="$(basename "$pkg")"
+              # Skip packages whose requires-python excludes this interpreter
+              # (e.g. django-boundary requires >=3.12 and must not run on 3.11).
+              if ! python .github/scripts/py_compatible.py "$pkg"; then
+                echo "Skipping $name on Python $py (requires-python excludes it)."
+                continue
+              fi
+              echo "Installing $name..."
               pip install -e "$pkg"
             fi
           done
@@ -126,9 +134,10 @@ jobs:
           DJANGO_SETTINGS_MODULE: settings
           PYTHONPATH: packages/icv-taxonomy/src:packages/icv-taxonomy/tests:packages/icv-tree/src
 
-      # django-boundary: PostgreSQL (uses POSTGRES_* env vars)
+      # django-boundary: PostgreSQL (uses POSTGRES_* env vars).
+      # Requires Python >=3.12, so it is not installed or tested on 3.11.
       - name: Test django-boundary
-        if: always()
+        if: always() && matrix.python-version != '3.11'
         run: pytest packages/django-boundary/tests/ -v --tb=short --color=yes
         env:
           DJANGO_SETTINGS_MODULE: settings
