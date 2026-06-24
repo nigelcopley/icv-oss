@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Deprecated
+
+- `icv_core.tenancy` mixins now warn at point of use. Subclassing
+  `TenantAwareMixin` or `TenantOwnedMixin` emits a `DeprecationWarning` via
+  `__init_subclass__` (precise and actionable, instead of a noisy
+  import-time warning on every `icv_core.models` import). The README gains a
+  "Tenancy (deprecated)" section with a full migration table to
+  `django-boundary` (`TenantModel`, `TenantManager`, `TenantContext`).
+
 ## [0.2.0] - 2026-04-08
 
 Promoted to Production/Stable.
