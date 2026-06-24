@@ -228,6 +228,24 @@ resolve_alert(alert, resolved_by=request.user, notes="Stripe incident resolved."
 
 ---
 
+### Tenancy (deprecated)
+
+`icv_core.tenancy` (`TenantAwareMixin`, `TenantOwnedMixin`, `TenantScopedManager`, and the `get/set/clear_current_tenant` context helpers) is **deprecated** and will be removed in a future release. Subclassing either mixin now emits a `DeprecationWarning`.
+
+Use [django-boundary](https://github.com/nigelcopley/icv-oss/tree/main/packages/django-boundary) instead — it provides row-level isolation backed by PostgreSQL Row Level Security, automatic query filtering, and a configurable tenant FK name.
+
+| Deprecated (`icv_core.tenancy`) | Replacement (`django-boundary`) |
+|---|---|
+| `TenantAwareMixin` (FK `on_delete=PROTECT`) | `boundary.models.TenantModel` |
+| `TenantOwnedMixin` (FK `on_delete=CASCADE`) | `boundary.models.TenantModel` (CASCADE is the default) |
+| `TenantScopedManager` (explicit `.for_tenant()`) | `boundary.models.TenantManager` (automatic filtering) |
+| `get_current_tenant()` | `boundary.context.TenantContext.get()` |
+| `set_current_tenant()` | `boundary.context.TenantContext.set()` |
+| `clear_current_tenant()` | `boundary.context.TenantContext.clear()` |
+| `tenant_context()` | `boundary.context.TenantContext.using()` |
+
+---
+
 ### Template tags
 
 ```django

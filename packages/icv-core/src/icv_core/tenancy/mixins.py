@@ -12,11 +12,19 @@ a different field name should define the FK field explicitly in their models
 rather than using these mixins.
 """
 
+import warnings
+
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from icv_core.tenancy.managers import TenantScopedManager
+
+_MIGRATION_HINT = (
+    "icv_core.tenancy.{name} is deprecated and will be removed in a future "
+    "release. Migrate to django-boundary: subclass boundary.models.TenantModel "
+    "(see APP-019 / the icv-core README 'Tenancy (deprecated)' section)."
+)
 
 
 class TenantAwareMixin(models.Model):
@@ -68,6 +76,10 @@ class TenantAwareMixin(models.Model):
     class Meta:
         abstract = True
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        warnings.warn(_MIGRATION_HINT.format(name="TenantAwareMixin"), DeprecationWarning, stacklevel=2)
+
 
 class TenantOwnedMixin(models.Model):
     """
@@ -103,3 +115,7 @@ class TenantOwnedMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        warnings.warn(_MIGRATION_HINT.format(name="TenantOwnedMixin"), DeprecationWarning, stacklevel=2)
