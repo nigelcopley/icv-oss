@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Removed
+
+- **`ICV_CORE_SOFT_DELETE_FIELD` setting** (and its `icv_core.E002` system
+  check). The setting was inert: the soft-delete marker is the `is_active`
+  BooleanField declared on `SoftDeleteModel` — a real, indexed, migrated
+  column that cannot be renamed via a setting — and nothing read the setting.
+  It only misled consumers into thinking the field was configurable. Setting
+  it had no effect before and has no effect now; no migration is required.
+
 ## [0.2.0] - 2026-04-08
 
 Promoted to Production/Stable.
