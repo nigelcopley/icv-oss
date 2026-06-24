@@ -52,7 +52,6 @@ def _default_conf_values():
     """Return a dict of conf settings that produce a clean check result."""
     return dict(
         ICV_CORE_UUID_VERSION=4,
-        ICV_CORE_SOFT_DELETE_FIELD="is_active",
         ICV_CORE_AUDIT_ENABLED=False,
         ICV_CORE_AUDIT_RETENTION_DAYS=365,
         ICV_CORE_ALLOW_HARD_DELETE=False,
@@ -141,45 +140,6 @@ class TestCheckUUIDVersion:
         errors = _run_check(ICV_CORE_UUID_VERSION=99)
         e001 = next(e for e in errors if e.id == "icv_core.E001")
         assert "99" in e001.hint
-
-
-# ---------------------------------------------------------------------------
-# System checks — soft delete field
-# ---------------------------------------------------------------------------
-
-
-class TestCheckSoftDeleteField:
-    """E002 fires when ICV_CORE_SOFT_DELETE_FIELD is blank or non-string."""
-
-    def test_empty_string_raises_e002(self):
-        errors = _run_check(ICV_CORE_SOFT_DELETE_FIELD="")
-        ids = [e.id for e in errors]
-        assert "icv_core.E002" in ids
-
-    def test_whitespace_only_raises_e002(self):
-        errors = _run_check(ICV_CORE_SOFT_DELETE_FIELD="   ")
-        ids = [e.id for e in errors]
-        assert "icv_core.E002" in ids
-
-    def test_none_raises_e002(self):
-        errors = _run_check(ICV_CORE_SOFT_DELETE_FIELD=None)
-        ids = [e.id for e in errors]
-        assert "icv_core.E002" in ids
-
-    def test_integer_raises_e002(self):
-        errors = _run_check(ICV_CORE_SOFT_DELETE_FIELD=123)
-        ids = [e.id for e in errors]
-        assert "icv_core.E002" in ids
-
-    def test_valid_field_name_no_e002(self):
-        errors = _run_check(ICV_CORE_SOFT_DELETE_FIELD="deleted")
-        ids = [e.id for e in errors]
-        assert "icv_core.E002" not in ids
-
-    def test_e002_hint_contains_current_value(self):
-        errors = _run_check(ICV_CORE_SOFT_DELETE_FIELD="")
-        e002 = next(e for e in errors if e.id == "icv_core.E002")
-        assert e002.id == "icv_core.E002"
 
 
 # ---------------------------------------------------------------------------
