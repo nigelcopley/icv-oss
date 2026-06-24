@@ -61,6 +61,38 @@ class TestVocabularyAdminRegistration:
         assert VocabularyAdmin.list_display == expected
 
 
+class TestRegisterAdminErrorHandling:
+    """_register_admin surfaces real misconfiguration instead of swallowing it."""
+
+    def test_registration_failure_is_logged_not_silent(self, caplog):
+        import logging
+        from unittest.mock import patch
+
+        from icv_taxonomy import admin as taxonomy_admin
+
+        # Simulate a misconfigured swappable model: resolution raises.
+        # _register_admin imports these from icv_taxonomy.conf locally.
+        with (
+            patch("icv_taxonomy.conf.get_vocabulary_model", side_effect=LookupError("bad swap")),
+            patch("icv_taxonomy.conf.get_term_model", side_effect=LookupError("bad swap")),
+            caplog.at_level(logging.WARNING, logger="icv_taxonomy.admin"),
+        ):
+            taxonomy_admin._register_admin()
+
+        assert any("failed to register" in r.message for r in caplog.records)
+
+    def test_already_registered_is_quiet(self, caplog):
+        import logging
+
+        from icv_taxonomy import admin as taxonomy_admin
+
+        # Models are already registered at import — re-running must not warn.
+        with caplog.at_level(logging.WARNING, logger="icv_taxonomy.admin"):
+            taxonomy_admin._register_admin()
+
+        assert not [r for r in caplog.records if "failed to register" in r.message]
+
+
 @pytest.mark.django_db
 class TestVocabularyAdminQueryset:
     """VocabularyAdmin.get_queryset annotates _term_count correctly."""

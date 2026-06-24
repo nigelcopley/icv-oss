@@ -12,9 +12,13 @@ conf.py so that swapped models are handled correctly.
 
 from __future__ import annotations
 
+import logging
+
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
+
+logger = logging.getLogger(__name__)
 
 try:
     from icv_tree.admin import TreeAdmin as _TreeAdmin
@@ -210,22 +214,31 @@ def _active_terms_filter(related_name: str | None = None):  # type: ignore[no-un
 def _register_admin() -> None:
     """Register VocabularyAdmin and TermAdmin with the default site.
 
-    Wrapped in a function and guarded by try/except so that misconfigured
-    or swapped models do not break the whole admin at startup.
+    Wrapped per-model so that a misconfigured or swapped model does not break
+    the whole admin at startup. ``AlreadyRegistered`` is expected and quiet
+    (a project may register its own admin for a swapped model); any other
+    failure is logged at WARNING so the misconfiguration is visible instead of
+    silently producing a missing admin (only otherwise surfaced via
+    ``manage.py check``).
     """
     from .conf import get_term_model, get_vocabulary_model
 
-    try:
-        Vocabulary = get_vocabulary_model()
-        admin.site.register(Vocabulary, VocabularyAdmin)
-    except Exception:  # noqa: BLE001
-        pass
-
-    try:
-        Term = get_term_model()
-        admin.site.register(Term, TermAdmin)
-    except Exception:  # noqa: BLE001
-        pass
+    for label, get_model, admin_cls in (
+        ("Vocabulary", get_vocabulary_model, VocabularyAdmin),
+        ("Term", get_term_model, TermAdmin),
+    ):
+        try:
+            admin.site.register(get_model(), admin_cls)
+        except admin.sites.AlreadyRegistered:
+            logger.debug("icv_taxonomy: %s admin already registered; leaving the existing one.", label)
+        except Exception:
+            logger.warning(
+                "icv_taxonomy: failed to register %s admin — check ICV_TAXONOMY_%s_MODEL. "
+                "The admin for this model will be unavailable.",
+                label,
+                label.upper(),
+                exc_info=True,
+            )
 
 
 _register_admin()
