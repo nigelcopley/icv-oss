@@ -57,3 +57,30 @@ class TestSoftDeleteQuerySet:
 
         qs = ConcreteSoftDeleteModel.objects.deleted()
         assert qs.count() == 1
+
+
+class TestSoftDeleteFieldIsFixed:
+    """The soft-delete marker is the fixed `is_active` field.
+
+    Regression: ICV_CORE_SOFT_DELETE_FIELD was dead config that implied the
+    field name was configurable. It has been removed; setting it must have no
+    effect on filtering.
+    """
+
+    @pytest.mark.django_db
+    def test_filtering_keys_on_is_active(self, settings):
+        # A stray setting (as a consumer might still have) must not change behaviour.
+        settings.ICV_CORE_SOFT_DELETE_FIELD = "nonexistent_field"
+
+        active = ConcreteSoftDeleteModel.objects.create(title="active")
+        deleted = ConcreteSoftDeleteModel.objects.create(title="deleted")
+        deleted.soft_delete()
+
+        assert deleted.is_active is False
+        assert active in ConcreteSoftDeleteModel.objects.active()
+        assert deleted in ConcreteSoftDeleteModel.objects.deleted()
+
+    def test_setting_is_not_defined_in_conf(self):
+        import icv_core.conf as conf
+
+        assert not hasattr(conf, "ICV_CORE_SOFT_DELETE_FIELD")

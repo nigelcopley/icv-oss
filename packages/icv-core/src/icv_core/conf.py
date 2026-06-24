@@ -20,9 +20,6 @@ from django.conf import settings
 # UUID version for primary keys (4 = random, 7 = time-sorted, requires Python 3.12+)
 ICV_CORE_UUID_VERSION: int = getattr(settings, "ICV_CORE_UUID_VERSION", 4)
 
-# Field name used for soft-delete filtering
-ICV_CORE_SOFT_DELETE_FIELD: str = getattr(settings, "ICV_CORE_SOFT_DELETE_FIELD", "is_active")
-
 # Whether BaseModel includes created_by/updated_by fields (requires CurrentUserMiddleware)
 ICV_CORE_TRACK_CREATED_BY: bool = getattr(settings, "ICV_CORE_TRACK_CREATED_BY", False)
 
