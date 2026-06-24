@@ -375,6 +375,31 @@ result = cleanup_orphaned_associations(model_class=Article)
 result = cleanup_orphaned_associations(dry_run=True)
 ```
 
+Because there is no database cascade, **you are responsible for running this
+periodically** — orphans accumulate silently otherwise. Two automatic options:
+
+```bash
+# Management command (also runs as part of icv_taxonomy_check --fix)
+python manage.py icv_taxonomy_check --fix
+```
+
+```python
+# Celery beat — schedule the bundled task (Celery optional; the task is a
+# no-op-decorated plain function when Celery is absent and can be called directly)
+CELERY_BEAT_SCHEDULE = {
+    "icv-taxonomy-orphan-cleanup": {
+        "task": "icv_taxonomy.tasks.cleanup_orphaned_associations_task",
+        "schedule": 24 * 60 * 60,  # daily
+    },
+}
+
+# Or invoke directly / restrict to one model:
+from icv_taxonomy.tasks import cleanup_orphaned_associations_task
+
+cleanup_orphaned_associations_task.delay()                 # all content types
+cleanup_orphaned_associations_task.delay("app_label.Model")  # one model
+```
+
 ---
 
 ## Models Reference
