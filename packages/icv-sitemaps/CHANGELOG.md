@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- The "Create 410 Gone rule from selected 404s" admin action no longer
+  silently swallows per-row failures (`except Exception: pass`). Each failed
+  conversion is now logged at `WARNING` and the operator is shown a
+  warning-level message with the failure count, instead of only a success
+  count that hid the failures.
+
 ## [0.5.1] - 2026-04-16
 
 ### Fixed

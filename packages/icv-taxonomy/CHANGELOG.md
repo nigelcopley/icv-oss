@@ -9,6 +9,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- Admin registration (`_register_admin`) no longer swallows failures silently.
+  A misconfigured swappable model (`ICV_TAXONOMY_VOCABULARY_MODEL` /
+  `ICV_TAXONOMY_TERM_MODEL`) previously produced a silently-missing admin via
+  `except Exception: pass`. It now logs a `WARNING` (with traceback) so the
+  misconfiguration is visible, while the benign `AlreadyRegistered` case stays
+  quiet.
+
 ## [0.3.2] — 2026-04-20
 
 ### Fixed
