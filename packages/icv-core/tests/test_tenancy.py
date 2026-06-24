@@ -291,3 +291,23 @@ class TestTenantContextIntegration:
 
         clear_current_tenant()
         assert get_current_tenant() is None
+
+
+class TestTenancyMixinDeprecation:
+    """Subclassing the deprecated mixins warns and points to django-boundary."""
+
+    def test_tenant_aware_subclass_warns(self, recwarn):
+        class AwareDeprecated(TenantAwareMixin, BaseModel):
+            class Meta:
+                app_label = "test_tenancy"
+
+        msgs = [str(w.message) for w in recwarn.list if issubclass(w.category, DeprecationWarning)]
+        assert any("TenantAwareMixin is deprecated" in m and "boundary" in m for m in msgs)
+
+    def test_tenant_owned_subclass_warns(self, recwarn):
+        class OwnedDeprecated(TenantOwnedMixin, BaseModel):
+            class Meta:
+                app_label = "test_tenancy"
+
+        msgs = [str(w.message) for w in recwarn.list if issubclass(w.category, DeprecationWarning)]
+        assert any("TenantOwnedMixin is deprecated" in m and "boundary" in m for m in msgs)

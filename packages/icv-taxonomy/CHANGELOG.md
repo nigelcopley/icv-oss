@@ -9,6 +9,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `icv_taxonomy.tasks.cleanup_orphaned_associations_task` — a schedulable
+  Celery task wrapping `cleanup_orphaned_associations()`. `TermAssociation`
+  uses a `GenericForeignKey` with no database cascade, so deleting a tagged
+  object leaves orphan rows (BR-TAX-018); this gives projects an automatic,
+  beat-schedulable cleanup instead of relying solely on a manual call. Celery
+  is optional — without it the task is a plain callable. README documents the
+  cleanup obligation and how to schedule it.
+
 ### Fixed
 
 - Admin registration (`_register_admin`) no longer swallows failures silently.

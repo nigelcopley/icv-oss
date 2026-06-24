@@ -4,7 +4,13 @@ from django.db import models
 
 
 class SoftDeleteQuerySet(models.QuerySet):
-    """QuerySet that filters soft-deleted records."""
+    """QuerySet that filters soft-deleted records.
+
+    The soft-delete marker is the ``is_active`` BooleanField declared on
+    ``SoftDeleteModel``. The field name is fixed (it is a real model field
+    with a migration and an index), so it is referenced directly rather than
+    via a setting.
+    """
 
     def active(self) -> "SoftDeleteQuerySet":
         """Return only active (non-deleted) records."""

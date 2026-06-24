@@ -11,7 +11,6 @@ def check_icv_core_configuration(app_configs, **kwargs):
         ICV_CORE_ALLOW_HARD_DELETE,
         ICV_CORE_AUDIT_ENABLED,
         ICV_CORE_AUDIT_RETENTION_DAYS,
-        ICV_CORE_SOFT_DELETE_FIELD,
         ICV_CORE_UUID_VERSION,
         ICV_TENANCY_TENANT_MODEL,
     )
@@ -25,16 +24,6 @@ def check_icv_core_configuration(app_configs, **kwargs):
                 "ICV_CORE_UUID_VERSION must be 4 (random) or 7 (time-sorted).",
                 hint=f"Current value: {ICV_CORE_UUID_VERSION}. Set to 4 or 7 in Django settings.",
                 id="icv_core.E001",
-            )
-        )
-
-    # ICV_CORE_SOFT_DELETE_FIELD: must be a non-empty string
-    if not isinstance(ICV_CORE_SOFT_DELETE_FIELD, str) or not ICV_CORE_SOFT_DELETE_FIELD.strip():
-        errors.append(
-            Error(
-                "ICV_CORE_SOFT_DELETE_FIELD must be a non-empty string.",
-                hint=f"Current value: {ICV_CORE_SOFT_DELETE_FIELD!r}. Set to a valid field name like 'is_active'.",
-                id="icv_core.E002",
             )
         )
 
