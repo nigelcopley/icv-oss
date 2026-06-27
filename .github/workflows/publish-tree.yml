@@ -48,6 +48,26 @@ jobs:
           echo "release_title=icv-tree v${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Version: $VERSION"
 
+      - uses: actions/checkout@v6
+
+      - name: Require a CHANGELOG entry for this version
+        env:
+          VERSION: ${{ steps.parse.outputs.version }}
+        run: |
+          CHANGELOG="${PACKAGE_DIR}/CHANGELOG.md"
+          if [[ ! -f "$CHANGELOG" ]]; then
+            echo "ERROR: $CHANGELOG does not exist. Every release must ship a CHANGELOG."
+            exit 1
+          fi
+          # Require a heading like "## [0.4.0]" (date and surrounding text optional).
+          if ! grep -qE "^##[[:space:]]+\[${VERSION//./\\.}\]" "$CHANGELOG"; then
+            echo "ERROR: No CHANGELOG entry found for version ${VERSION} in $CHANGELOG."
+            echo "Add a '## [${VERSION}] — <date>' section (rename [Unreleased]) before tagging."
+            echo "See RELEASING.md — every release must ship a dated CHANGELOG entry."
+            exit 1
+          fi
+          echo "Found CHANGELOG entry for ${VERSION}."
+
   # ── 2. Run the test suite before publishing ────────────────────────────────
   test:
     name: Test icv-tree
