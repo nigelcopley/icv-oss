@@ -96,6 +96,14 @@ that is **not** a substitute for the curated CHANGELOG entry — write the
 CHANGELOG by hand so consumers reading the package on PyPI/GitHub get a
 human-authored summary, not just a commit list.
 
+## Where planning docs go
+
+Triage notes, design plans, and other internal working documents go in
+`docs/plans/` at the repo root, which is **gitignored** (kept on disk as a
+historical record, not committed). User-facing package documentation belongs in
+the package's own `packages/<pkg>/docs/` tree and **is** committed. See
+`docs/plans/README.md` for the distinction.
+
 ## Keep the CI Django pin in step with the floor
 
 Each `publish-<pkg>.yml` test job pins a Django version for the pre-publish test
