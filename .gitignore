@@ -18,3 +18,9 @@ coverage.xml
 venv/
 .DS_Store
 .idea/
+
+# Planning archive: keep plan docs on disk as a historical record, but do not
+# commit them. The directory itself is preserved via its tracked README/.gitkeep.
+docs/plans/*
+!docs/plans/.gitkeep
+!docs/plans/README.md
